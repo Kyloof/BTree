@@ -105,23 +105,21 @@ public class BTree<T> {
                 index++;
             }
 
-            // value is within the node
+            // value is in the node
             if(index < valueNo && comparator.compare(value, valueList.get(index)) == 0) {
 
 
-                // if the node is the leaf we remove directly from the node
+                // if its a leaf remove from the node
                 if(isLeaf) {
-                    T retValue = valueList.remove(index);
+                    T val = valueList.remove(index);
                     valueNo--;
-                    return retValue;
+                    return val;
                 }
 
-                //Jeśli k znajduje się w węźle wewnętrznym, to usuwany jest poprzednik węzła
+                //if the node is internal node we must get value from its child
                 else {
-                    // we swap intended value with its predecessor
                     valueList.set(index, childrenList.get(index).removePredecessor(null));
-                    // Jeśli usunięcie poprzednika i następnika wymaga naprawy,
-                    //to usuwany jest którykolwiek z nich.
+                    // if the child became minimal as a result of a swap - fix nodes
                     if(childrenList.get(index).valueNo < t - 1) {
                         this.fixNodesChild(index);
                     }
