@@ -22,7 +22,7 @@ public class Main {
         bTree.insert(8);
         bTree.insert(9);
 
-        bTree.remove(9);
+        bTree.remove(4);
         System.out.println(bTree.search(9));
 
 

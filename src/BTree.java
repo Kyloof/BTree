@@ -105,7 +105,7 @@ public class BTree<T> {
                 index++;
             }
 
-            // value is within that node
+            // value is within the node
             if(index < valueNo && comparator.compare(value, valueList.get(index)) == 0) {
 
 
@@ -116,20 +116,19 @@ public class BTree<T> {
                     return retValue;
                 }
 
-                // it is an internal node, we need to find the predecessor and fix its removal.
+                //Jeśli k znajduje się w węźle wewnętrznym, to usuwany jest poprzednik węzła
                 else {
                     // we swap intended value with its predecessor
                     valueList.set(index, childrenList.get(index).removePredecessor(null));
-                    // to allow appropriate flow of fixing we need to ensure that current node's child
-                    // meets the requirements ONLY AFTER SWAPPING VALUES
-                    // fixes from the leaf up to the direct child of current node are handled in removePredecessor method
+                    // Jeśli usunięcie poprzednika i następnika wymaga naprawy,
+                    //to usuwany jest którykolwiek z nich.
                     if(childrenList.get(index).valueNo < t - 1) {
                         this.fixNodesChild(index);
                     }
                 }
             }
 
-            // there's no such value as we are already in the leaf and the index i exceeded last key index.
+            // not found
             else if(isLeaf) {
                 return null;
             }
@@ -139,9 +138,7 @@ public class BTree<T> {
                 value = childrenList.get(index).remove(value);
             }
 
-            // we fix the node
-            // when the recursion closes in cascade, we fix every node recursively (if there's a need)
-            // we check if last accessed child meets requirements
+            // fix nodes of children
             if(childrenList.get(index).valueNo < t - 1) {
                 // if not, we call fixNodesChild on the parent of the child and pass child's index
                 this.fixNodesChild(index);
@@ -152,30 +149,21 @@ public class BTree<T> {
 
 
         private T removePredecessor(Node parent) {
-            // buffer value
             T value;
 
-            // we need to traverse until we find the leaf, and mark its last value as a buffer
             if(isLeaf) {
                 value = valueList.remove(valueNo-1);
                 valueNo--;
             }
 
-            // else we search in last child of currently operated node
-            // the parameter parent is this because we will be operating on this.child
             else {
                 value = childrenList.getLast().removePredecessor(this);
             }
 
-            // closing recursion we fix the nodes recursively up until there's no need, or the parent is null
-            // the null parent indicates that we accessed the direct child of a node we operated in main remove method
-            // we fix it only to this moment to ensure proper fixing flow, because the swap operation
-            // (which is the return of this method) is done BEFORE fixing predecessor trail nodes
             if(parent != null && childrenList.size() < t - 1) {
                 parent.fixNodesChild(parent.childrenList.size() - 1);
             }
 
-            // we return the predecessor value to swap objective node
             return value;
         }
 
@@ -183,11 +171,17 @@ public class BTree<T> {
             Node child = childrenList.get(index);
             Node leftSibling = index > 0 ? childrenList.get(index - 1) : null;
             Node rightSibling = index < valueNo ? childrenList.get(index + 1) : null;
-
+            //1. Jeśli lewy brat nie jest minimalny, to wykonywana jest
+            //rotacja z lewego brata. Koniec.
             if (leftSibling != null && leftSibling.valueNo >= t) {
                 rotateFromLeft(index);
+                //2. Jeśli prawy brat nie jest minimalny, to wykonywana jest
+                //rotacja z prawego brata. Koniec.
             } else if (rightSibling != null && rightSibling.valueNo >= t) {
                 rotateFromRight(index);
+                //3. Wpp, węzeł jest łączony z lewym lub prawym bratem, co
+                //może sprawić, że rodzic będzie miał mniej niż minimalną
+                //liczbę kluczy
             } else {
                 merge(index);
             }
@@ -199,25 +193,20 @@ public class BTree<T> {
             newNode.isLeaf = child.isLeaf;
             newNode.valueNo = t - 1;
 
-            // Move the last t-1 elements of child to newNode
             for (int i = 0; i < t - 1; i++) {
                 newNode.valueList.add(child.valueList.get(i + t));
             }
 
-            // Remove the moved elements from child
-            // Removing from index t will shift remaining elements
             if (t > 1) {
                 child.valueList.subList(t, 2 * t - 1).clear();
             }
 
-            // Move the last t children of child to newNode
             if (!child.isLeaf) {
                 for (int i = 0; i < t; i++) {
                     newNode.childrenList.add(child.childrenList.get(i + t));
                 }
-                // Remove the moved children from child
                 for (int i = 0; i < t; i++) {
-                    child.childrenList.remove(t); // Removing from index t will shift remaining elements
+                    child.childrenList.remove(t);
                 }
             }
 
@@ -227,7 +216,6 @@ public class BTree<T> {
 
             valueList.add(index, child.valueList.get(middleIndex));
 
-            // Remove the middle value from the child
             child.valueList.remove(middleIndex);
 
             valueNo++;
@@ -237,14 +225,12 @@ public class BTree<T> {
         void insertNonFull(T value) {
             int i = valueNo - 1;
             if (isLeaf) {
-                // Find the location to insert the new value
                 while (i >= 0 && comparator.compare(value, valueList.get(i)) < 0) {
                     i--;
                 }
                 valueList.add(i + 1, value);
                 valueNo++;
             } else {
-                // Find the child to recurse into
                 while (i >= 0 && comparator.compare(value, valueList.get(i)) < 0) {
                     i--;
                 }
@@ -283,7 +269,7 @@ public class BTree<T> {
             int isFound = result[1];
 
             if (isFound == 1) {
-                return valueList.get(searchIndex); // Return the found element
+                return valueList.get(searchIndex);
             }
 
             if (isLeaf) {
